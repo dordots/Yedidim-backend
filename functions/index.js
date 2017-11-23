@@ -1,4 +1,6 @@
 const functions = require('firebase-functions');
+var rp = require('request-promise');
+
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -98,7 +100,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
           body: eventData.details.full_address
         },
         data : {
-            key : 'eventData.key'    
+            key : eventData.key    
         }
       };
   
@@ -129,3 +131,69 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
       });
     });
   });
+  exports.sendExpoFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
+    
+        var eventData = event.data.val();
+        console.log(eventData);
+        // Get the list of device notification tokens.
+        const getDeviceTokensPromise = admin.database().ref('/volunteer')
+            .orderByChild("notificationToken").startAt("")
+        .once('value');
+      
+        // Get the follower profile.
+      
+        return Promise.resolve(getDeviceTokensPromise).then(tokens => {
+          // Check if there are any device tokens.
+          if (!tokens.hasChildren()) {
+            return console.log('There are no notification tokens to send to.');
+          }
+    
+          console.log('There are', tokens.numChildren(), 'tokens to send notifications to.');
+      
+          // Notification details.
+          const payload = {
+            notification: {
+              title: 'Yedidim',
+              body: eventData.details.full_address
+            },
+            data : {
+                key : 'eventData.key'    
+            }
+          };
+      
+          console.log(tokens.val());
+          // Listing all tokens.
+          var tokenData= tokens.val();
+          const dataToSend = 
+            
+          Object.keys(tokenData).map(function(t){return 
+            var objectToSend = {};
+                objectToSend.to = tokenData[t].notificationToken;
+                objectToSend.data = eventData.key;
+                objectToSend.title = 'yedidim title';
+            });
+    
+          console.log(dataToSend);
+          
+          var options = {
+            method: 'POST',
+            uri: 'https://exp.host/--/api/v2/push/send',
+            body: dataToSend,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            json: true // Automatically stringifies the body to JSON
+        };
+         
+        return rp(options)
+            .then(function (parsedBody) {
+                console.log(parsedBody);
+                // POST succeeded...
+            })
+            .catch(function (err) {
+                console.log(err);
+                // POST failed...
+            });
+        });
+      });
+    
