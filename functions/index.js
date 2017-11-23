@@ -72,7 +72,10 @@ exports.getVolunters = functions.https.onRequest((req, res) => {
 
 });
 
-exports.sendFollowerNotification = functions.database.ref('/events').onWrite(event => {
+exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
+
+    var eventData = event.data.val();
+    console.log(eventData);
     // Get the list of device notification tokens.
     const getDeviceTokensPromise = admin.database().ref('/volunteer')
         .orderByChild("FCMToken").startAt("")
@@ -92,13 +95,20 @@ exports.sendFollowerNotification = functions.database.ref('/events').onWrite(eve
       const payload = {
         notification: {
           title: 'Yedidim',
-          body: event.details.full_address
+          body: eventData.details.full_address
         },
-        data : event.details
+        data : {
+            key : 'eventData.key'    
+        }
       };
   
+      console.log(tokens.val());
       // Listing all tokens.
-      const tokensToSend = Object.keys(tokens.val());
+      var tokenData= tokens.val();
+      const tokensToSend = 
+        Object.keys(tokenData).map(function(t){return tokenData[t].FCMToken});
+
+      console.log(tokensToSend);
   
       // Send notifications to all tokens.
       return admin.messaging().sendToDevice(tokensToSend, payload).then(response => {
