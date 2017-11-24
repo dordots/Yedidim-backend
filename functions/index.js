@@ -100,7 +100,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
           body: eventData.details.full_address
         },
         data : {
-            key : eventData.key    
+            event : JSON.stringify(eventData)
         }
       };
   
@@ -150,27 +150,20 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
     
           console.log('There are', tokens.numChildren(), 'tokens to send notifications to.');
       
-          // Notification details.
-          const payload = {
-            notification: {
-              title: 'Yedidim',
-              body: eventData.details.full_address
-            },
-            data : {
-                key : 'eventData.key'    
-            }
-          };
+       
       
           console.log(tokens.val());
           // Listing all tokens.
           var tokenData= tokens.val();
           const dataToSend = 
             
-          Object.keys(tokenData).map(function(t){return 
+          Object.keys(tokenData).map(function(t){
             var objectToSend = {};
                 objectToSend.to = tokenData[t].notificationToken;
-                objectToSend.data = eventData.key;
+                objectToSend.data = eventData;
                 objectToSend.title = 'yedidim title';
+
+                return objectToSend;
             });
     
           console.log(dataToSend);
