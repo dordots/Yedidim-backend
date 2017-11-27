@@ -160,7 +160,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
           Object.keys(tokenData).map(function(t){
             var objectToSend = {};
                 objectToSend.to = tokenData[t].NotificationToken;
-                objectToSend.data = eventData.details;
+                objectToSend.data = { key: eventData.key };
                 objectToSend.title = 'yedidim title';
                 objectToSend.body = 'Body Test';
 		objectToSend.sound = 'default';
