@@ -169,7 +169,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
         console.log(eventData);
         // Get the list of device notification tokens.
         const getDeviceTokensPromise = admin.database().ref('/volunteer')
-            .orderByChild("notificationToken").startAt("")
+            .orderByChild("NotificationToken").startAt("")
         .once('value');
       
         // Get the follower profile.
@@ -191,10 +191,11 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
             
           Object.keys(tokenData).map(function(t){
             var objectToSend = {};
-                objectToSend.to = tokenData[t].notificationToken;
-                objectToSend.data = eventData;
+                objectToSend.to = tokenData[t].NotificationToken;
+                objectToSend.data = { key: eventData.key };
                 objectToSend.title = 'yedidim title';
-
+                objectToSend.body = 'Body Test';
+		objectToSend.sound = 'default';
                 return objectToSend;
             });
     
