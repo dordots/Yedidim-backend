@@ -74,6 +74,38 @@ exports.getVolunters = functions.https.onRequest((req, res) => {
 
 });
 
+
+exports.takeEvent = functions.https.onRequest((req,res) => {
+    console.log('call takeEvent', req.body.eventId, req.body.volunteerId, '/events/' + req.body.eventId);
+
+    var promise = admin.database().ref('/events/' + req.body.eventId).once('value');
+    
+    return Promise.resolve(promise).then(t => {
+
+        if (!t.hasChildren()) {
+            return console.log('There are no event');
+          }
+    
+        console.log('There are', t.numChildren(), 'events');
+        console.log(t.val());
+        console.log('found event ', t.val());
+
+        const currentVoluneerId = t.val().assignedTo;
+        if(currentVoluneerId){
+            console.log('event already took by volunteer ', currentVoluneerId);
+            res.status(400).send({ message: 'event already took'});
+        }
+        else {
+             admin.database().ref('/events/' + req.body.eventId + '/assignedTo')
+            .set(req.body.volunteerId)
+            .then(res.status(200).send({message : 'OK!'}));
+        }
+
+        
+
+    })
+})
+
 exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
 
     var eventData = event.data.val();
