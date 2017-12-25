@@ -14,6 +14,8 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 let GeoFire = require('geofire');
 let geoFire = new GeoFire(admin.database().ref('/geolocations'));
+
+
 let addLocation = (key, location) => {
     return geoFire.set(key, location).then(() => {
         console.log('Update succesfull');
@@ -100,16 +102,23 @@ exports.takeEvent = functions.https.onRequest((req,res) => {
             .set(req.body.volunteerId)
             .then(res.status(200).send({message : 'OK!'}));
         }
-
-        
-
     })
 })
 
-exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
+exports.sendFollowerNotification = functions.database.ref('/events/{eventId}')
+    .onUpdate(event => {
 
     var eventData = event.data.val();
+    var previousValue = event.data.previous.val();
+    console.log('old is' + previousValue.status + ' new is ' + eventData.status);
     console.log(eventData);
+    
+    if(eventData.status == 'sent' &&  previousValue.status != 'sent'){
+        console.log('block');
+        return;
+    }
+
+    
     // Get the list of device notification tokens.
     const getDeviceTokensPromise = admin.database().ref('/volunteer')
         .orderByChild("FCMToken").startAt("")
@@ -127,10 +136,6 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
   
       // Notification details.
       const payload = {
-        notification: {
-          title: 'Yedidim',
-          body: eventData.details.full_address
-        },
         data : {
             event : JSON.stringify(eventData)
         }
@@ -166,7 +171,15 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
   exports.sendExpoFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
     
         var eventData = event.data.val();
+        var previousValue = event.data.previous.val();
+        console.log('old is' + previousValue.status + ' new is ' + eventData.status);
         console.log(eventData);
+        
+        if(eventData.status == 'sent' &&  previousValue.status != 'sent'){
+            console.log('block');
+            return;
+        }
+    
         // Get the list of device notification tokens.
         const getDeviceTokensPromise = admin.database().ref('/volunteer')
             .orderByChild("NotificationToken").startAt("")
@@ -181,12 +194,11 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
           }
     
           console.log('There are', tokens.numChildren(), 'tokens to send notifications to.');
-      
-       
-      
           console.log(tokens.val());
           // Listing all tokens.
           var tokenData= tokens.val();
+
+          // Create a new Expo SDK client
           const dataToSend = 
             
           Object.keys(tokenData).map(function(t){
@@ -195,10 +207,12 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
                 objectToSend.data = { key: eventData.key };
                 objectToSend.title = 'yedidim title';
                 objectToSend.body = 'Body Test';
-		objectToSend.sound = 'default';
+		        objectToSend.sound = 'default';
                 return objectToSend;
             });
     
+
+
           console.log(dataToSend);
           
           var options = {
