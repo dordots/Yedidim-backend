@@ -113,7 +113,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}')
     console.log('old is' + previousValue.status + ' new is ' + eventData.status);
     console.log(eventData);
     
-    if(eventData.status == 'sent' &&  previousValue.status != 'sent'){
+    if(eventData.status != 'sent' ||  previousValue.status == 'sent'){
         console.log('block');
         return;
     }
@@ -175,7 +175,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}')
         console.log('old is' + previousValue.status + ' new is ' + eventData.status);
         console.log(eventData);
         
-        if(eventData.status == 'sent' &&  previousValue.status != 'sent'){
+        if(eventData.status != 'sent' ||  previousValue.status == 'sent'){
             console.log('block');
             return;
         }
