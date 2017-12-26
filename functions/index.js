@@ -56,7 +56,7 @@ exports.setLocation = functions.https.onRequest((req, res) => {
 
 exports.getVolunters = functions.https.onRequest((req, res) => {
     console.log('call getVolunters', req.body.latitude, req.body.longtitude, req.body.callId);
-    
+
     var geoQuery = geoFire.query({
         center: [req.body.latitude, req.body.longtitude],
         radius: 3000
@@ -76,16 +76,20 @@ exports.getVolunters = functions.https.onRequest((req, res) => {
 
 
 exports.takeEvent = functions.https.onRequest((req,res) => {
-    console.log('call takeEvent', req.body.eventId, req.body.volunteerId, '/events/' + req.body.eventId);
+    console.log('call takeEvent',req.body, req.body.eventId, req.body.volunteerId, '/events/' + req.body.eventId);
+
+    if(!req.body.eventId || !req.body.volunteerId){
+        return res.status(404).send({message : "can't find volunteer or event"});
+    }
 
     var promise = admin.database().ref('/events/' + req.body.eventId).once('value');
-    
+
     return Promise.resolve(promise).then(t => {
 
         if (!t.hasChildren()) {
             return console.log('There are no event');
           }
-    
+
         console.log('There are', t.numChildren(), 'events');
         console.log(t.val());
         console.log('found event ', t.val());
@@ -101,7 +105,7 @@ exports.takeEvent = functions.https.onRequest((req,res) => {
             .then(res.status(200).send({message : 'OK!'}));
         }
 
-        
+
 
     })
 })
@@ -114,9 +118,9 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
     const getDeviceTokensPromise = admin.database().ref('/volunteer')
         .orderByChild("FCMToken").startAt("")
     .once('value');
-  
+
     // Get the follower profile.
-  
+
     return Promise.resolve(getDeviceTokensPromise).then(tokens => {
       // Check if there are any device tokens.
       if (!tokens.hasChildren()) {
@@ -124,7 +128,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
       }
 
       console.log('There are', tokens.numChildren(), 'tokens to send notifications to.');
-  
+
       // Notification details.
       const payload = {
         notification: {
@@ -135,15 +139,15 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
             event : JSON.stringify(eventData)
         }
       };
-  
+
       console.log(tokens.val());
       // Listing all tokens.
       var tokenData= tokens.val();
-      const tokensToSend = 
+      const tokensToSend =
         Object.keys(tokenData).map(function(t){return tokenData[t].FCMToken});
 
       console.log(tokensToSend);
-  
+
       // Send notifications to all tokens.
       return admin.messaging().sendToDevice(tokensToSend, payload).then(response => {
         // For each message check if there was an error.
@@ -164,31 +168,31 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
     });
   });
   exports.sendExpoFollowerNotification = functions.database.ref('/events/{eventId}').onUpdate(event => {
-    
+
         var eventData = event.data.val();
         console.log(eventData);
         // Get the list of device notification tokens.
         const getDeviceTokensPromise = admin.database().ref('/volunteer')
             .orderByChild("NotificationToken").startAt("")
         .once('value');
-      
+
         // Get the follower profile.
-      
+
         return Promise.resolve(getDeviceTokensPromise).then(tokens => {
           // Check if there are any device tokens.
           if (!tokens.hasChildren()) {
             return console.log('There are no notification tokens to send to.');
           }
-    
+
           console.log('There are', tokens.numChildren(), 'tokens to send notifications to.');
-      
-       
-      
+
+
+
           console.log(tokens.val());
           // Listing all tokens.
           var tokenData= tokens.val();
-          const dataToSend = 
-            
+          const dataToSend =
+
           Object.keys(tokenData).map(function(t){
             var objectToSend = {};
                 objectToSend.to = tokenData[t].NotificationToken;
@@ -198,9 +202,9 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
 		objectToSend.sound = 'default';
                 return objectToSend;
             });
-    
+
           console.log(dataToSend);
-          
+
           var options = {
             method: 'POST',
             uri: 'https://exp.host/--/api/v2/push/send',
@@ -210,7 +214,7 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
             },
             json: true // Automatically stringifies the body to JSON
         };
-         
+
         return rp(options)
             .then(function (parsedBody) {
                 console.log(parsedBody);
@@ -222,4 +226,4 @@ exports.sendFollowerNotification = functions.database.ref('/events/{eventId}').o
             });
         });
       });
-    
+
