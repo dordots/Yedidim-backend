@@ -8,5 +8,8 @@
     "request": "^2.83.0",
     "request-promise": "^4.2.2"
   },
+  "scripts": {
+    "deploy" : "firebase deploy --only functions:getVolunters,functions:onUserCreateTrigger,functions:sendExpoFollowerNotification,functions:sendFollowerNotification,functions:setLocation,functions:takeEvent"
+  },
   "private": true
 }
